@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+  phone    String   @unique
+  role     String
+  borrows  Borrow[]
+}
+
+model Book {
+  id           Int            @id @default(autoincrement())
+  name         String
+  author       String
+  description  String
+  borrows      Borrow[]
+  BookCategory BookCategory[]
+}
+
+model Borrow {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  bookId     Int       @map("book_id")
+  borrowDate DateTime  @default(now()) @map("borrow_date")
+  returnDate DateTime? @map("return_date")
+  user       User?     @relation(fields: [userId], references: [id])
+  book       Book?     @relation(fields: [bookId], references: [id])
+}
+
+model Category {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  BookCategory BookCategory[]
+}
+
+model BookCategory {
+  id         Int @id @default(autoincrement())
+  bookId     Int @map("book_id")
+  categoryId Int @map("category_id")
+
+  book     Book?     @relation(fields: [bookId], references: [id])
+  category Category? @relation(fields: [bookId], references: [id])
+}
