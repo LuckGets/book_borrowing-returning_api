@@ -5,7 +5,7 @@ This repository collect all the source code for interview test. I'm using nest.j
 ## ER Diagram
 
 The ER diagram designed for this database
-![ER diagram](image.png)
+![ER diagram](./src/public/images/erd.png)
 
 ### Seeding
 
