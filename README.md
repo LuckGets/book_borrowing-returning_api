@@ -1,73 +1,60 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
-
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This repository collect all the source code for interview test. I'm using nest.js as a framework to develop RESTful API which requirement provided by the interviewer.
 
-## Installation
+## ER Diagram
 
-```bash
-$ npm install
-```
+The ER diagram designed for this database
+![ER diagram](image.png)
 
-## Running the app
+### Seeding
 
-```bash
-# development
-$ npm run start
+The collection of seed data is in
 
-# watch mode
-$ npm run start:dev
+    path: ./prisma/seed.js
 
-# production mode
-$ npm run start:prod
-```
-
-## Test
+command for seed :
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# seed
+$ npx prisma db seed
 ```
 
-## Support
+API Endpoint:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+#### Books
 
-## Stay in touch
+| Method | Endpoint                  | Access    | Descrtiption                                      |
+| ------ | ------------------------- | --------- | ------------------------------------------------- |
+| GET    | /books/all                | PUBLIC    | Get all books                                     |
+| GET    | /books/all                | PUBLIC    | Get all books                                     |
+| GET    | /find/:id                 | PUBLIC    | Get the book with provided ID                     |
+| GET    | /search?query             | PUBLIC    | Get books with provided query string              |
+| GET    | /search/categories/?query | PUBLIC    | Get books with provided categories query string   |
+| GET    | /most                     | PUBLIC    | Get the book which has the most borrowed records. |
+| POST   | /create                   | PROTECTED | Create book                                       |
+| PATCH  | /update/:id               | PROTECTED | Update books with provided ID                     |
+| DELETE | /:id                      | PROTECTED | Delete books with provided ID                     |
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### Auth
 
-## License
+| Method | Endpoint     | Access     | Descrtiption              |
+| ------ | ------------ | ---------- | ------------------------- |
+| GET    | /logout/:id  | PROTECTED  | User logout. remove token |
+| GET    | /refresh/:id | PROTECTEED | Refresh refresh token     |
+| POST   | /signin      | PUBLIC     | Signin                    |
+| POST   | /signup      | PUBLIC     | Sign up                   |
 
-Nest is [MIT licensed](LICENSE).
+#### User
+
+| Method | Endpoint | Access | Descrtiption    |
+| ------ | -------- | ------ | --------------- |
+| GET    | /:id     | PUBLIC | Find user by ID |
+
+#### Borrow
+
+| Method | Endpoint        | Access    | Descrtiption                       |
+| ------ | --------------- | --------- | ---------------------------------- |
+| GET    | /search         | PUBLIC    | Find borrow record by query string |
+| POST   | /create         | PROTECTED | Create borrow records              |
+| PATCH  | /update/:bookId | PROTECTED | Update borrow records.             |
