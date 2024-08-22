@@ -1,8 +1,18 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
-import { UserSignInDto, UserSignUpDto } from './dtos/authUser.dto';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { Token, UserSignInDto, UserSignUpDto } from './dtos/authUser.dto';
 import { User } from '@prisma/client';
-import { Role } from 'src/types/role';
 import { AuthService } from './auth.service';
+import { AccessTokenGuard } from 'src/guards/accessToken.guard';
+import { RefreshTokenGuard } from 'src/guards/refreshToken.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -14,11 +24,11 @@ export class AuthController {
       throw new BadRequestException('Please provide email or phone');
 
     let payload;
-    if (body.phone) {
-      payload = this.authService.signIn(body.email, body.password);
+    if (body.email) {
+      payload = await this.authService.signIn(body.email, body.password);
     }
     if (body.phone) {
-      payload = this.authService.signIn(body.phone, body.password);
+      payload = await this.authService.signIn(body.phone, body.password);
     }
 
     if (!payload)
@@ -28,15 +38,27 @@ export class AuthController {
   }
 
   @Post('signup')
-  async signUp(@Body() body: UserSignUpDto): Promise<User> {
-    body.role = Role.user;
-    const user = await this.authService.createUser(body);
+  async signUp(@Body() body: UserSignUpDto): Promise<Token> {
+    const token = await this.authService.createUser(body);
 
-    if (!user)
+    if (!token)
       throw new BadRequestException(
         'Email or Phone already in use. Please provide new information',
       );
 
-    return user;
+    return token;
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Get('logout/:id')
+  logout(@Param('id') id: string) {
+    this.authService.logout(Number(id));
+  }
+
+  @UseGuards(RefreshTokenGuard)
+  @Get('refresh/:id')
+  refreshToken(@Headers() headers, @Param('id') id: string) {
+    const refreshToken = headers.authorization.split('Bearer')[1].slice(1);
+    return this.authService.refreshToken(Number(id), refreshToken);
   }
 }

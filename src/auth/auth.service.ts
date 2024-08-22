@@ -1,39 +1,48 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User } from '@prisma/client';
 import { UserService } from 'src/user/user.service';
-import { Bcrypt } from 'src/utils/bcrypt';
+import { Token } from './dtos/authUser.dto';
+import { Bcrypt } from './strategy/bcrypt';
+
+export enum Role {
+  user = 'user',
+  admin = 'admin',
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
-    private readonly bcryptService: Bcrypt,
     private readonly jwtService: JwtService,
+    private readonly bcryptService: Bcrypt,
   ) {}
 
-  async signIn(
-    emailOrPhone: string,
-    password: string,
-  ): Promise<{ access_token: string }> {
+  async signIn(emailOrPhone: string, password: string): Promise<Token> {
     // Find the user in database
     const user = await this.userService.findUserByEmailOrPhone(emailOrPhone);
-
     // If there is no user in database
     if (!user) return null;
 
+    const isPasswordCorrect = this.compareHash(password, user.password);
     // Check if password is correct or not
-    if (!this.bcryptService.compare(password, user.password))
-      throw new UnauthorizedException('Unauthorized');
+    if (!isPasswordCorrect) throw new UnauthorizedException('Unauthorized');
+
+    const tokens = await this.createTokens(user.id);
+
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
 
     // Assign user id in to payload
-    const payload = { id: user.id };
-
     // return accessToken which signed by JWT
-    return { access_token: await this.jwtService.signAsync(payload) };
+    return tokens;
   }
 
-  async createUser(data: Prisma.UserCreateInput): Promise<User> {
+  async createUser(data: Prisma.UserCreateInput): Promise<Token> {
     // Find the duplication email in database
     const userWithDupeEmail = await this.userService.findUserByEmailOrPhone(
       data.email,
@@ -49,15 +58,101 @@ export class AuthService {
     if (userWithDupePhone) return null;
 
     // Hashing the password
-    const hashedPassword = await this.bcryptService.hash(
-      data.password,
-      Number(process.env.BCRYPT_SALT),
-    );
+    const hashedPassword = await this.hashData(data.password);
 
     // Changing the password to Hashed password
     data.password = hashedPassword;
 
-    // Return the instance of User
-    return this.userService.createUser(data);
+    data.role = Role.user;
+
+    // Create the instance of User
+    const user = await this.userService.createUser(data);
+
+    // Create access and refresh tokens
+    const tokens = await this.createTokens(user.id);
+
+    // Updating refreshToken for the new user with hashed one
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    // Return tokens back to client
+    return tokens;
+  }
+
+  async createTokens(userId: number): Promise<Token> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          id: userId,
+        },
+        {
+          secret: process.env.JWT_ACCESS_SECRET,
+          expiresIn: '15m',
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          id: userId,
+        },
+        {
+          secret: process.env.JWT_REFRESH_SECRET,
+          expiresIn: '7d',
+        },
+      ),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  async updateRefreshToken(
+    userId: number,
+    refreshToken: string,
+  ): Promise<void> {
+    const hashedRefreshToken = await this.hashData(refreshToken);
+
+    await this.userService.update(userId, { refreshToken: hashedRefreshToken });
+  }
+
+  async logout(userId: number): Promise<User> {
+    return this.userService.update(userId, { refreshToken: null });
+  }
+
+  async refreshToken(userId: number, refreshToken: string) {
+    const user = await this.userService.findUserById({ id: userId });
+    if (!user || !user.refreshToken)
+      throw new ForbiddenException('Access Denied');
+
+    const isRefreshTokenMatches = await this.compareHash(
+      refreshToken,
+      user.refreshToken,
+    );
+
+    if (!isRefreshTokenMatches) throw new ForbiddenException('Access Denied');
+
+    const tokens = await this.createTokens(user.id);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
+  }
+
+  async hashData(data: string): Promise<string> {
+    return await this.bcryptService.hash(data, Number(process.env.BCRYPT_SALT));
+  }
+
+  async compareHash(
+    dataToCompare: string,
+    hashedData: string,
+  ): Promise<Boolean> {
+    return await this.bcryptService.compare(dataToCompare, hashedData);
+  }
+
+  async isAdmin(accessToken: string) {
+    const { id } = this.jwtService.verify(accessToken, {
+      secret: process.env.JWT_ACCESS_SECRET,
+    });
+
+    const user = await this.userService.findUserById({ id: id });
+
+    if (!user) throw new BadRequestException('User does not exist');
+
+    return user.role === Role.admin;
   }
 }

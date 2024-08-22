@@ -14,13 +14,14 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String
-  email    String   @unique
-  password String
-  phone    String   @unique
-  role     String
-  borrows  Borrow[]
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  password     String
+  phone        String   @unique
+  role         String
+  refreshToken String?
+  borrows      Borrow[]
 }
 
 model Book {
@@ -28,6 +29,7 @@ model Book {
   name         String
   author       String
   description  String
+  removedDate  DateTime?
   borrows      Borrow[]
   BookCategory BookCategory[]
 }
@@ -54,5 +56,5 @@ model BookCategory {
   categoryId Int @map("category_id")
 
   book     Book?     @relation(fields: [bookId], references: [id])
-  category Category? @relation(fields: [bookId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
 }

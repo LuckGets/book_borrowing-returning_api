@@ -4,16 +4,18 @@ import {
   IsOptional,
   IsPhoneNumber,
   IsString,
+  Length,
 } from 'class-validator';
-import { Role } from 'src/types/role';
+import { Role } from '../auth.service';
 
 export class UserSignInDto {
   @IsOptional()
-  @IsString()
+  @IsEmail()
   email: string;
 
   @IsOptional()
-  @IsPhoneNumber()
+  @IsString()
+  @Length(10)
   phone: string;
 
   @IsString()
@@ -30,9 +32,18 @@ export class UserSignUpDto {
   @IsString()
   password: string;
 
-  @IsPhoneNumber()
+  @IsString()
+  @Length(10)
   phone: string;
 
   @IsOptional()
   role: Role;
+}
+
+export class Token {
+  @IsString()
+  accessToken: string;
+
+  @IsString()
+  refreshToken: string;
 }
