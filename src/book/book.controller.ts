@@ -11,6 +11,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import { CreateBookDto } from './dtos/create-book.dto';
@@ -20,7 +21,10 @@ import { instanceToPlain } from 'class-transformer';
 import { Book } from '@prisma/client';
 import { SearchBookDto } from './dtos/search-book.dto';
 import { query } from 'express';
+import { Serialize } from 'src/interceptors/serialize.interceptor';
+import { BookDto } from './dtos/book.dto';
 
+@Serialize(BookDto)
 @Controller('books')
 export class BookController {
   constructor(
@@ -87,7 +91,11 @@ export class BookController {
 
   @Delete('/:id')
   @UseGuards(AccessTokenGuard)
-  delete(@Param('id') id: string) {
+  async delete(@Headers() headers, @Param('id') id: string) {
+    const accessToken = headers.authorization.split('Bearer')[1].slice(1);
+    const isAdmin = await this.authService.isAdmin(accessToken);
+
+    if (!isAdmin) throw new ForbiddenException('Permission Denied');
     return this.bookService.delete({ id: Number(id) });
   }
 }

@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -13,10 +15,14 @@ import { Borrow } from '@prisma/client';
 import { BorrowService } from './borrow.service';
 import { AccessTokenGuard } from 'src/guards/accessToken.guard';
 import { SearchBorrowDto } from './dtos/search-borrow.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 @Controller('borrow')
 export class BorrowController {
-  constructor(private borrowService: BorrowService) {}
+  constructor(
+    private borrowService: BorrowService,
+    private authService: AuthService,
+  ) {}
 
   @Get('/search')
   findByQuery(@Query() query: SearchBorrowDto) {
@@ -27,16 +33,30 @@ export class BorrowController {
 
   @UseGuards(AccessTokenGuard)
   @Post('create')
-  async create(@Body() data: CreateBorrowDto): Promise<Borrow> {
+  async create(
+    @Headers() headers,
+    @Body() data: CreateBorrowDto,
+  ): Promise<Borrow> {
+    const accessToken = headers.authorization.split('Bearer')[1].slice(1);
+    const isAdmin = await this.authService.isAdmin(accessToken);
+
+    if (!isAdmin) throw new ForbiddenException('Permission Denied');
+
     return this.borrowService.create(data);
   }
 
   @UseGuards(AccessTokenGuard)
   @Patch('update/:bookId')
   async update(
+    @Headers() headers,
     @Body() data: Partial<CreateBorrowDto>,
     @Param('bookId') bookId: string,
   ): Promise<Borrow> {
+    const accessToken = headers.authorization.split('Bearer')[1].slice(1);
+    const isAdmin = await this.authService.isAdmin(accessToken);
+
+    if (!isAdmin) throw new ForbiddenException('Permission Denied');
+
     return this.borrowService.update(Number(bookId), data);
   }
 }
