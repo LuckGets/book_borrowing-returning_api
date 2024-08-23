@@ -5,16 +5,18 @@ import { UserService } from 'src/user/user.service';
 import { Bcrypt } from './strategy/bcrypt';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from 'src/user/user.module';
+import { AdminGuard } from './guards/admin.guard';
 
 @Module({
   imports: [
     UserModule,
     JwtModule.register({
+      secret: process.env.JWT_ACCESS_SECRET,
       signOptions: { expiresIn: '15m' },
     }),
   ],
-  providers: [AuthService, Bcrypt],
+  providers: [AuthService, Bcrypt, AdminGuard],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, AdminGuard, JwtModule],
 })
 export class AuthModule {}
