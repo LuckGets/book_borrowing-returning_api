@@ -1,6 +1,6 @@
 ## Description
 
-This repository collect all the source code for interview test. I'm using nest.js as a framework to develop RESTful API which requirement provided by the interviewer.
+This repository contain all the source code for REST API designing for Borrowing-Returning book system. 
 
 ## ER Diagram
 
@@ -24,7 +24,7 @@ $ npx prisma db seed
 
 #### Books : /books
 
-| Method | Endpoint                  | Access    | Descrtiption                                      |
+| Method | Endpoint                  | Access    | Description                                      |
 | ------ | ------------------------- | --------- | ------------------------------------------------- |
 | GET    | /all                      | PUBLIC    | Get all books                                     |
 | GET    | /all                      | PUBLIC    | Get all books                                     |
